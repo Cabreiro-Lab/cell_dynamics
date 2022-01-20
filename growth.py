@@ -69,4 +69,10 @@ else:
                     "the files within your design file!\n"
                     "Exiting from the run.")
 
+
+# from this point, I need to open the files, calculate their stuff, plot them, and save the relevant
+# info in an output csv file
+for file in files_in_system:
+    biospa_text_opener(os.path.join(ROOT, file))
+
 print("All is OK")
