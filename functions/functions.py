@@ -1,6 +1,8 @@
 import os
 import pandas as pd
+import numpy as np
 from glob import glob
+from collections import Counter
 
 
 # functions
@@ -74,5 +76,24 @@ def df_beautify(txt_object, times):
     df = df.drop(0, axis=1)
     df.drop(df.columns[len(df.columns) - 1], axis=1, inplace=True)  # remove last column as it's a \n
     df.columns = times  # put times as column names
+    df = df.replace(r'^\s*$', np.NaN, regex=True)  # replace empty values (from 0:00:00 time values) for NaN
+    df.dropna(axis=1, inplace=True)  # remove empty columns
+    df = df.apply(pd.to_numeric)  # change type to numeric
 
     return df
+
+
+def check_nm(nm):
+    """
+    Checks the most common wavelength found in the files
+    :param nm:
+    :return:
+    """
+    count = Counter(nm)
+    if len(count) > 1:
+        max_item = list(count.keys())[0]
+        item_instances = list(count.values())[0]
+        return print(f'Careful! I found more than one wavelength in the files. \n'
+                     f'The most common wavelength is {max_item} with {item_instances}')
+    else:
+        print(f'Wavelength of the experiment is: {nm[0]}')

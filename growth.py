@@ -51,6 +51,9 @@ print(f'The folder {os.path.split(args.input)[-1]} will be analysed in the mode 
 
 # initialise variables
 ROOT = args.input
+# general parameters
+WAVES = []  # all info about the nm will be stored here to output the most commonly used term for the OD
+WAVE = 0  # wave length used in the experiment
 
 # read Excel file with Pandas
 
@@ -68,7 +71,6 @@ else:
     raise Exception("The files in the folder are not the same as "
                     "the files within your design file!\n"
                     "Exiting from the run.")
-
 
 # from this point, I need to open the files, calculate their stuff, plot them, and save the relevant
 # info in an output csv file
