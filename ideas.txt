@@ -1,0 +1,22 @@
+Ideas to introduce in the future code:
+
+Pov used the logistic growth equation from https://www.jstatsoft.org/article/download/v033i07/367
+This way he was able to calculate curve parameters:
+    - lambda: length of lag phase
+    - mu: growth rate
+    - A: max. cell growth
+
+Parametric growth model:
+Introduce more than one model of growth (logistic, Gompertz, mod Gompertz, Richards...)
+Compare the models with AIC and select best one
+
+Implement a model-free method of spline/trapezoid integration for AUC.
+Calculate the same parameters using splines.
+
+Bootstrap method to get confidence intervals?
+
+
+Multi-variate tests:
+    - PCA
+    - t-SNE
+    - Clustering with K-means? (useful when we don't know about the samples?)

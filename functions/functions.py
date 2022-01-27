@@ -97,3 +97,47 @@ def check_nm(nm):
                      f'The most common wavelength is {max_item} with {item_instances}')
     else:
         print(f'Wavelength of the experiment is: {nm[0]}')
+
+
+def time_to_sec(time_str):
+    """
+    Converts a time string from reading the file with biospa_text_opener and converts it to seconds
+    :param time_str: a time string like '0:00:30'
+    :return: an integer of the total seconds (30 in the case of the example)
+    """
+    h, m, s = time_str.split(':')
+    seconds = int(s) + 60 * int(m) + 3600 * int(h)
+    return seconds
+
+
+def set_series2min(x, thres: float = 0.0):
+    """
+    This function takes a pandas series and removes all the 0s
+    :param x: a Pandas Series object
+    :param thres: threshold to use as a minimum value
+    :return: returns a numpy array without negative values
+    """
+    x = x.to_numpy()
+    x = np.clip(x, thres, np.inf)
+    return x
+
+
+def growth(x, A, lam, u):
+    """
+    Parametric logistic growth model.
+    Ref: https://www.jstatsoft.org/article/download/v033i07/367
+    :param x: series values
+    :param A: carrying capacity or max growth
+    :param lam: length of lag phase
+    :param u: growth rate
+    :return: returns the model to be optimised with curve_fit from scipy
+    """
+    return A / (1 + np.exp((4 * u / A) * (lam - x) + 2))
+
+
+
+
+# TODO:
+#   - introduce functions as dircheck(somedir), to check the existence of folder
+#   - start separating functions by classes (reading files, converting, analysing...)
+#   that will help to create different files and make the code go faster depending on the options
