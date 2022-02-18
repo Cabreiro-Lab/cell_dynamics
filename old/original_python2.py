@@ -998,7 +998,7 @@ def analyse(data, full, t):
                 data[plate]['Figures']=data[plate]['Figures']+[wave+'_f',wave+'_log',wave+'_dt']
             
         summary=pd.DataFrame([],index=wells)
-            
+        # from this point onwards, AUC calculation
         for fg in data[plate]['Figures']:
             summaries=[summary]
             fgdata=data[plate][fg]

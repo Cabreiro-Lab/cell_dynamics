@@ -44,7 +44,26 @@ def check_if_equal(list_1, list_2):
     return sorted(list_1) == sorted(list_2)
 
 
+def fix_times(times):
+    """
+    Takes a vector with the raw times values from the txt and fixes them into a proper shape and rounded values
+    :param times: vector of times from the txt file from biospa
+    :return: a vector of fixed times
+    """
+    times = [time_to_sec(val) for val in times if val not in ['Time', '', '0:00:00']]
+    length = len(times)
+    timestep = round_to(float(times[-1] - times[0]) / (length - 1), 1)
+    timemax_min = int((length - 1) * timestep / 60)  # time max in minutes
+    time_span = np.linspace(0, timemax_min * 60, length, dtype=np.dtype(int))
+    return time_span
+
+
 def biospa_text_opener(file):
+    """
+    Main function for opening the txt files from biospa
+    :param file: a path to the txt file corresponding to a single plate in your computer
+    :return: a tuple of a pandas dataframe, a vector of temperatures, and an OD value for the plate
+    """
     # opens the file
     with open(file, 'r', errors='ignore') as f:
         contents = f.readlines()
@@ -52,14 +71,17 @@ def biospa_text_opener(file):
     od = contents[0].split('\n')[0]
     # save the times
     times = contents[2].split('\t')[1:-1]
+    times = fix_times(times)  # this fixes size and values for the times, rounding them
     # save temperatures
-    temps = contents[3].split('\t')[1:-1]
+    temps_raw = contents[3].split('\t')[1:-1]
+    temps = [float(temp) for temp in temps_raw if temp not in ['0.0', '']]
+    temps = np.array(temps)
     # save the useful data info
-    cosa = contents[4:101]
+    temp_df = contents[4:len(contents)]
     # convert it to a pandas object
-    df = df_beautify(cosa, times=times)
+    df = df_beautify(temp_df, times=times)
 
-    return print(f'I could open file {file}')
+    return df, temps, od
 
 
 def df_beautify(txt_object, times):
@@ -75,9 +97,9 @@ def df_beautify(txt_object, times):
     df = df.set_index(df[0])  # set index as well name
     df = df.drop(0, axis=1)
     df.drop(df.columns[len(df.columns) - 1], axis=1, inplace=True)  # remove last column as it's a \n
-    df.columns = times  # put times as column names
     df = df.replace(r'^\s*$', np.NaN, regex=True)  # replace empty values (from 0:00:00 time values) for NaN
     df.dropna(axis=1, inplace=True)  # remove empty columns
+    df.columns = times  # put times as column names
     df = df.apply(pd.to_numeric)  # change type to numeric
 
     return df
@@ -97,6 +119,19 @@ def check_nm(nm):
                      f'The most common wavelength is {max_item} with {item_instances}')
     else:
         print(f'Wavelength of the experiment is: {nm[0]}')
+
+
+def round_to(n, precision):
+    """
+    Function from the original script to round numbers to a desired precision
+    (Need to check if I really need this)
+    :param n: a float
+    :param precision: an integer
+    :return:
+    """
+    # Round a number to desired precision
+    correction = 0.5 if n >= 0 else -0.5
+    return int(n / precision + correction) * precision
 
 
 def time_to_sec(time_str):
@@ -135,6 +170,29 @@ def growth(x, A, lam, u):
     return A / (1 + np.exp((4 * u / A) * (lam - x) + 2))
 
 
+def check_outliers_temps(temp_vect, thres: float = 0.1):
+    """
+    Checks if there are outliers in the temperature vector
+    :param temp_vect: a numpy array of temperatures
+    :param thres: the threshold to detect outliers, in proportion of the average value (0.1 by default)
+    :return: a boolean, and the numpy array of the possible outliers
+    """
+    temps_av = np.average(temp_vect) * thres
+    min_temp, max_temp = np.average(temp_vect) - temps_av, np.average(temp_vect) + temps_av
+    filter_temps = temp_vect[np.logical_and(temp_vect > max_temp, temp_vect < min_temp)]
+    if len(filter_temps) == 0:
+        return False
+    else:
+        return True, filter_temps
+
+
+def integral(biospa_df, position: str):
+    var = biospa_df.loc[position].to_list()
+
+    var = np.array(var)
+    var = var - min(var)  # set min values to 0
+
+    return np.trapz(y=var)
 
 
 # TODO:

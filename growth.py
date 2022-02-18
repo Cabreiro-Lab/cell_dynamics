@@ -15,7 +15,7 @@ __license__ = 'GNU Affero General Public License Version 3'
 __email__ = 'dmartimarti **AT** gmail.com'
 __maintainer__ = 'Daniel Martínez Martínez'
 __status__ = 'Test'
-__date__ = 'Jan 2022'
+__date__ = 'Feb 2022'
 __version__ = '0.1'
 
 from functions.functions import *
@@ -75,6 +75,14 @@ else:
 # from this point, I need to open the files, calculate their stuff, plot them, and save the relevant
 # info in an output csv file
 for file in files_in_system:
-    biospa_text_opener(os.path.join(ROOT, file))
+    print(f'Reading file {file}')
+    df, temps, OD = biospa_text_opener(os.path.join(ROOT, file))
+    if check_outliers_temps(temps):
+        raise Exception("There are outliers in the temperatures, check your experiment!")
+    else:
+        pass
+    print('Calculating integrals')
+    for pos in df.index.to_list():
+        integral(df, pos)
 
 print("All is OK")
