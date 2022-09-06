@@ -3,3 +3,8 @@
 /workspace.xml
 ./test_data
 .idea
+split_fasta.py
+.DS_Store
+test_jupyter.ipynb
+_one_plate_script.py
+_scratch.py

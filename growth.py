@@ -85,4 +85,6 @@ for file in files_in_system:
     for pos in df.index.to_list():
         integral(df, pos)
 
+# to test: python growth.py -i ./test_data/
+
 print("All is OK")
