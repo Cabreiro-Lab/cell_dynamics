@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from glob import glob
 from collections import Counter
+import matplotlib.style as mplstyle
+from matplotlib import pyplot as plt
 
 
 # functions
@@ -147,7 +149,7 @@ def time_to_sec(time_str):
 
 def set_series2min(x, thres: float = 0.0):
     """
-    This function takes a pandas series and removes all the 0s
+    This function takes a pandas series and clip the values between 0 and Inf
     :param x: a Pandas Series object
     :param thres: threshold to use as a minimum value
     :return: returns a numpy array without negative values
@@ -193,6 +195,107 @@ def integral(biospa_df, position: str):
     var = var - min(var)  # set min values to 0
 
     return np.trapz(y=var)
+
+
+def plot_individual_plate(data, title, out_name, save=False):
+    """
+    Plots the data as a grid of 8x12. It takes a Pandas dataframe as input with Wells as index and time as columns.
+
+    :param data: data to plot
+    :param title: title of the plot
+    :param out_name: name of the output file
+    :param save: if True, saves the plot as a pdf file
+    """
+
+    # get index from data and separate it into numbers and letters, save only a unique list of both
+    plt.ioff()
+    mplstyle.use('fast')
+    index = data.index.to_list()
+    letters = list(set([i[0] for i in index]))
+    numbers =list(set([int(i[1:]) for i in index]))
+
+    # sort the lists
+    letters.sort()
+    numbers.sort()
+
+    let_len = len(letters)
+    num_len = len(numbers)
+
+    # plot data as an 8x12 grid, all plots share the same y and x axis, place a unique axis for each row and column
+    # print numbers as the general column name and letters as the general row name
+    fig, axs = plt.subplots(let_len, num_len, sharex=True, sharey=True, figsize=(num_len, let_len))
+    fig.suptitle(title)
+    for ax, col in zip(axs[0], numbers):
+        ax.set_title(col)
+    for ax, row in zip(axs[:, len(numbers)-1], letters):
+        ax.set_ylabel(row, rotation=0, size='large', labelpad=10)
+        ax.yaxis.set_label_position("right")
+    for i, ax in enumerate(axs.flat):
+        ax.plot(time_h, data.iloc[i])
+        ax.set_xticks(np.arange(0, 24, 12))
+        ax.set_yticks(np.arange(0, max(data.max(axis=1)), 0.3))
+    
+    if save:
+        # save the plot in pdf format
+        plt.savefig(f'{out_name}.pdf', format='pdf')
+
+
+
+def plot_individual_plate_plotly(data, title, out_name, save=False):
+    """
+    Plots the data as a grid of 8x12 using plotly. It takes a Pandas dataframe as input with Wells as index and time as columns.
+
+    :param data: data to plot
+    :param title: title of the plot
+    :param out_name: name of the output file
+    :param save: if True, saves the plot as a pdf file
+    """
+
+    # get index from data and separate it into numbers and letters, save only a unique list of both
+    index = data.index.to_list()
+    letters = list(set([i[0] for i in index]))
+    numbers =list(set([int(i[1:]) for i in index]))
+
+    # sort the lists
+    letters.sort()
+    numbers.sort()
+
+    let_len = len(letters)
+    num_len = len(numbers)
+
+    fig = make_subplots(rows=let_len, cols=num_len, 
+                        shared_xaxes=True, 
+                        shared_yaxes=True, 
+                        subplot_titles=numbers, 
+                        vertical_spacing=0.04, 
+                        horizontal_spacing=0.015)
+
+    for i, row in enumerate(letters):
+        for j, col in enumerate(numbers):
+            # set color to black and make plots wider
+            fig.add_trace(go.Scatter(x=time_h, 
+                                    y=data.loc[f'{row}{col}'], 
+                                    line=dict(color='black', width=1)), 
+                                    row=i+1, col=j+1)
+            # y axis update axes
+            if j == 0:
+                fig.update_yaxes(range=[0, 1], title_text=row, row=i+1, col=j+1, tickvals=np.arange(0, 1, 0.3))
+            else:
+                fig.update_yaxes(range=[0, 1], row=i+1, col=j+1, tickvals=np.arange(0, 1, 0.3))
+            # x axis, rotate the tick labels by 90 degrees
+            fig.update_xaxes(range=[0, 24], row=i+1, col=j+1, tickvals=[0, 12, 24], ticktext=[0, 12, 24], tickangle=0)
+      
+           
+    # make individual subplots wider 
+    # rotate y title_text by 90 degrees
+    fig.update_layout(title_text=title, 
+                title_x=0.5, title_y=0.95, title_font_size=20,
+                showlegend=False, height=700, width=1000)
+
+    # save the plot in pdf format
+    if save:
+        fig.write_image(f'{out_name}.pdf')
+
 
 
 # TODO:
