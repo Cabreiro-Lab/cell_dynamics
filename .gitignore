@@ -9,3 +9,5 @@ test_jupyter.ipynb
 _one_plate_script.py
 _scratch.py
 *.pyc
+*.pdf
+functions/__pycache__/functions.cpython-310.pyc
