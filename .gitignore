@@ -8,3 +8,4 @@ split_fasta.py
 test_jupyter.ipynb
 _one_plate_script.py
 _scratch.py
+*.pyc
