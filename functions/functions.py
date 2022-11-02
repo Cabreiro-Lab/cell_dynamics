@@ -5,6 +5,8 @@ from glob import glob
 from collections import Counter
 import matplotlib.style as mplstyle
 from matplotlib import pyplot as plt
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 
 # functions
@@ -197,6 +199,25 @@ def integral(biospa_df, position: str):
     return np.trapz(y=var)
 
 
+def get_time_h(df):
+    # time_t is the time from the experiment in format 0:00:00
+    time_t = df.columns.to_list()
+    time_t = [t+52 for t in time_t]
+    # length is the number of time points
+    length = len(time_t)
+    # timestep is the time between each time point
+    timestep = round_to(float(time_t[-1] - time_t[0]) / (length - 1), 1)
+    # timemax_min is the total time in minutes
+    timemax_min = int((length - 1) * timestep / 60)  # time max in mins
+    # timemax_remmin is the remainder of minutes
+    timemax_h, timemax_remmin = divmod(timemax_min, 60)
+    # time_span is the time in seconds
+    time_span = np.linspace(0, timemax_min * 60, length, dtype=np.dtype(int))
+    # time_h is the time in hours
+    time_h = time_span / 3600.0
+    return length, time_h, time_span
+
+
 def plot_individual_plate(data, title, out_name, save=False):
     """
     Plots the data as a grid of 8x12. It takes a Pandas dataframe as input with Wells as index and time as columns.
@@ -241,7 +262,8 @@ def plot_individual_plate(data, title, out_name, save=False):
 
 
 
-def plot_individual_plate_plotly(data, title, out_name, save=False):
+# make a function to plot the data as a grid of 8x12 using plotly
+def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
     """
     Plots the data as a grid of 8x12 using plotly. It takes a Pandas dataframe as input with Wells as index and time as columns.
 
@@ -260,6 +282,19 @@ def plot_individual_plate_plotly(data, title, out_name, save=False):
     letters.sort()
     numbers.sort()
 
+    # max of y axis
+    max_y = data.max(axis=1).max()
+
+    # steps between 0 and max, rounded to 1 decimal
+    step = round(max_y/3, 1)
+    # this solves a bug when step is too small to be rounded to 1 decimal
+    if step == 0.0:
+        step = round(max_y/3, 2)
+
+    # max x axis
+    max_x = data.columns.max() / 60 / 60
+    step_x = round(max_x/2, 0)
+
     let_len = len(letters)
     num_len = len(numbers)
 
@@ -267,8 +302,8 @@ def plot_individual_plate_plotly(data, title, out_name, save=False):
                         shared_xaxes=True, 
                         shared_yaxes=True, 
                         subplot_titles=numbers, 
-                        vertical_spacing=0.04, 
-                        horizontal_spacing=0.015)
+                        vertical_spacing=0.03, 
+                        horizontal_spacing=0.011)
 
     for i, row in enumerate(letters):
         for j, col in enumerate(numbers):
@@ -277,19 +312,31 @@ def plot_individual_plate_plotly(data, title, out_name, save=False):
                                     y=data.loc[f'{row}{col}'], 
                                     line=dict(color='black', width=1)), 
                                     row=i+1, col=j+1)
-            # y axis update axes
+            # y axis update axes, range between min and max of the data
             if j == 0:
-                fig.update_yaxes(range=[0, 1], title_text=row, row=i+1, col=j+1, tickvals=np.arange(0, 1, 0.3))
+                fig.update_yaxes(range=[0, max_y], gridcolor='white',
+                                title_text=row, 
+                                showline=True, linewidth=1, linecolor='black',mirror=True,
+                                row=i+1, col=j+1, 
+                                tickvals=np.arange(0, max_y, step))
             else:
-                fig.update_yaxes(range=[0, 1], row=i+1, col=j+1, tickvals=np.arange(0, 1, 0.3))
+                fig.update_yaxes(range=[0, max_y], gridcolor='white',
+                                showline=True, linewidth=1, linecolor='black',mirror=True,
+                                row=i+1, col=j+1, 
+                                tickvals=np.arange(0, max_y, step))
             # x axis, rotate the tick labels by 90 degrees
-            fig.update_xaxes(range=[0, 24], row=i+1, col=j+1, tickvals=[0, 12, 24], ticktext=[0, 12, 24], tickangle=0)
+            fig.update_xaxes(range=[0, 24], row=i+1, col=j+1, gridcolor='white',
+                            showline=True, linewidth=1, linecolor='black', mirror=True,
+                            tickvals=np.arange(0, max_x+(max_x*0.1), step_x), 
+                            ticktext=np.arange(0, max_x+(max_x*0.1), step_x), tickangle=0)
       
            
     # make individual subplots wider 
     # rotate y title_text by 90 degrees
     fig.update_layout(title_text=title, 
                 title_x=0.5, title_y=0.95, title_font_size=20,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
                 showlegend=False, height=700, width=1000)
 
     # save the plot in pdf format
