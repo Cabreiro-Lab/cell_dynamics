@@ -14,8 +14,16 @@ def read_my_excel(file_input):
     """
         Reads an Excel from a path with the main design of the experiment.
         It should contain relevant metadata.
-        :param file_input: path to an Excel file
-        :return: a Pandas object
+
+        Parameters 
+        ----------
+        file_input : str
+            Path to the Excel file with the main design of the experiment.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            A pandas DataFrame with the main design of the experiment.
     """
 
     xlfile = pd.read_excel(file_input,
@@ -218,7 +226,7 @@ def get_time_h(df):
     return length, time_h, time_span
 
 
-def plot_individual_plate(data, title, out_name, save=False):
+def plot_individual_plate(data, title, out_name, time_h, save=False):
     """
     Plots the data as a grid of 8x12. It takes a Pandas dataframe as input with Wells as index and time as columns.
 
@@ -267,10 +275,20 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
     """
     Plots the data as a grid of 8x12 using plotly. It takes a Pandas dataframe as input with Wells as index and time as columns.
 
-    :param data: data to plot
-    :param title: title of the plot
-    :param out_name: name of the output file
-    :param save: if True, saves the plot as a pdf file
+    Parameters
+    ----------
+    data : Pandas dataframe
+        data to plot
+    title : str
+        title of the plot
+    out_name : str
+        name of the output file
+    save : bool, optional
+        if True, saves the plot as a pdf file, by default False
+
+    Returns
+    -------
+    plotly figure
     """
 
     # get index from data and separate it into numbers and letters, save only a unique list of both
@@ -343,6 +361,58 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
     if save:
         fig.write_image(f'{out_name}.pdf')
 
+def plotly_wrapper(time_data, plate, data_type):
+    """
+    Wrapper function to plot the timeseries data using plotly
+
+    Parameters
+    ----------
+    time_data : pandas dataframe
+        The timeseries data to be plotted
+    plate : str
+        The plate name
+    data_type : str
+        The data type
+    time_h : list
+        The time in hours
+
+    Returns
+    -------
+    None.
+    """
+    ts = time_data[(time_data.File == plate) & (time_data.Data == data_type)]
+    ts = ts.drop(columns=['File', 'Plate', 'Strain', 'Type', 'Replicate', 'Metformin_mM', 'Data'])
+    ts = ts.set_index('Well')
+
+    time_h = [int(i) for i in time_data.columns if is_number(i)]
+    time_h = sorted(time_h)
+    time_h = np.array(time_h)/60/60
+
+    plot_individual_plate_plotly(ts, plate + data_type, f'./test_data/test_output/Plots/{plate}_{data_type}', time_h = time_h, save=True)
+
+
+# filter a list for numeric values
+def is_number(s):
+    """
+    Function to check if a string is a number
+
+    Parameters
+    ----------
+    s : str
+        The string to be checked
+
+    Returns
+    -------
+    bool
+        True if the string is a number, False otherwise
+        
+    """
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+    
 
 
 # TODO:
