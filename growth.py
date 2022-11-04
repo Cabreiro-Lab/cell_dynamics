@@ -16,23 +16,16 @@ __email__ = 'dmartimarti **AT** gmail.com'
 __maintainer__ = 'Daniel Martínez Martínez'
 __status__ = 'Test'
 __date__ = 'Nov 2022'
-__version__ = '0.3'
+__version__ = '0.4'
 
 from functions.functions import *
 import argparse
 import pathlib
-from scipy.optimize import curve_fit
-from scipy.signal import wiener
-from time import perf_counter
-import time
-from functions.functions import *
 import numpy as np
 from scipy import signal
-from matplotlib import pyplot as plt
-import matplotlib.style as mplstyle
 from tqdm import tqdm
 import shutil
-from multiprocessing import Pool
+from itertools import product
 from multiprocessing import get_context
 
 from scipy import interpolate as ip
@@ -65,6 +58,18 @@ parser.add_argument('-m',
                     help='Select between the 2 modes: biolog or growth')
 
 args = parser.parse_args()
+
+# class of colors to print in the terminal
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 # this function calculates the AUC of the OD time series
 def out_auc_function(file, mode):
@@ -162,12 +167,12 @@ if not os.path.exists(os.path.join(args.input, args.output)):
     os.makedirs(os.path.join(args.input, args.output))
 else:
     # give option to overwrite or not
-    overwrite = input(f'The folder {args.output} already exists. Do you want to overwrite it? (y/n): ')
+    overwrite = input(f'The folder {bcolors.OKBLUE}{args.output}{bcolors.ENDC} already exists. Do you want to overwrite it? (y/n): \n')
     if overwrite == 'y':
         shutil.rmtree(os.path.join(args.input, args.output))
         os.makedirs(os.path.join(args.input, args.output))
     else:
-        print('Exiting from the run.')
+        print(f'{bcolors.WARNING}Exiting from the run.{bcolors.ENDC}')
         exit()
 
 # create a folder for the plots
@@ -175,7 +180,7 @@ if not os.path.exists(os.path.join(args.input, args.output, 'Plots')):
     os.makedirs(os.path.join(args.input, args.output, 'Plots'))
 else:
     # give option to overwrite or not
-    overwrite = input(f'The folder {args.output}/Plots already exists. Do you want to overwrite it? (y/n): ')
+    overwrite = input(f'The folder {bcolors.OKBLUE}{args.output}/Plots{bcolors.ENDC} already exists. Do you want to overwrite it? (y/n): \n')
     if overwrite == 'y':
         shutil.rmtree(os.path.join(args.input, args.output, 'Plots'))
         os.makedirs(os.path.join(args.input, args.output, 'Plots'))
@@ -183,6 +188,7 @@ else:
         print('Plots will be saved in the existing folder.')
         
 # LOOP OVER THE FILES
+print(f'{bcolors.OKCYAN}Starting the analysis of the files...{bcolors.ENDC}\n')
 # parallel loop to get the AUCs
 with get_context("fork").Pool(10) as p:
     # user starmap to pass multiple arguments to the function
@@ -216,6 +222,21 @@ out_auc_df.to_csv(os.path.join(args.input, args.output, 'Summary.csv'), index=Fa
 out_time_df.to_csv(os.path.join(args.input, args.output, 'Timeseries.csv'), index=False)
 
 
+### PLOT THE TIMESERIES
+
+print(f'\nPlotting the {bcolors.OKGREEN}timeseries...{bcolors.ENDC}\n')
+
+data_types = out_time_df.Data.unique()
+plates = out_time_df.File.unique()
+
+# loop over the plates and data types
+with get_context("fork").Pool(n_threads) as p:
+    p.starmap(plotly_wrapper, zip([out_time_df]*len(list(product(plates, data_types))), 
+                                  [plate for plate in plates for i in range(len(data_types))], 
+                                  [data_type for i in range(len(plates)) for data_type in data_types]))
+p.close()
+
+
 # to test: python growth.py -i ./test_data/ -t 6
 
-print("All is OK")
+print(f"{bcolors.BOLD}All analyses have been completed successfully!{bcolors.ENDC}")
