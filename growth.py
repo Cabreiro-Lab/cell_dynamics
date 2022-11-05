@@ -71,6 +71,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 # this function calculates the AUC of the OD time series
 def out_auc_function(file, mode):
     # open the info about df, temperatures, times and OD
@@ -141,13 +142,10 @@ print(f'The folder {os.path.split(args.input)[-1]} will be analysed in the mode 
 # initialise variables
 ROOT = args.input
 n_threads = int(args.threads)
-# general parameters
-WAVES = []  # all info about the nm will be stored here to output the most commonly used term for the OD
-WAVE = 0  # wave length used in the experiment
+mode = args.mode
 
 # read Excel file with Pandas
-
-design = read_my_excel(os.path.join(args.input, args.file))
+design = read_design(os.path.join(args.input, args.file))
 
 # first, check if the files from the file and your computer are the same
 des_files = design['File'].to_list()
@@ -228,12 +226,14 @@ print(f'\nPlotting the {bcolors.OKGREEN}timeseries...{bcolors.ENDC}\n')
 
 data_types = out_time_df.Data.unique()
 plates = out_time_df.File.unique()
-
-# loop over the plates and data types
-with get_context("fork").Pool(n_threads) as p:
+out_path = os.path.join(args.input, args.output, 'Plots')
+print(out_path)
+# loop over the plates and data types, use plotly_wrapper function
+with get_context("fork").Pool(8) as p:
     p.starmap(plotly_wrapper, zip([out_time_df]*len(list(product(plates, data_types))), 
                                   [plate for plate in plates for i in range(len(data_types))], 
                                   [data_type for i in range(len(plates)) for data_type in data_types]))
+
 p.close()
 
 

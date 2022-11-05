@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 
 
 # functions
-def read_my_excel(file_input):
+def read_design(file_input):
     """
         Reads an Excel from a path with the main design of the experiment.
         It should contain relevant metadata.
@@ -31,6 +31,24 @@ def read_my_excel(file_input):
                            engine='openpyxl')
     return xlfile
 
+
+def get_sheet_names(file):
+    """
+    Function that gets the sheet names from an Excel file
+
+    Parameters
+    ----------
+    file : str
+        Path to the Excel file with the main design of the experiment.
+
+    Returns
+    -------
+    sheet_names : list
+        A list with the names of the sheets in the Excel file.
+    """
+    xlfile = pd.ExcelFile(file)
+    sheet_names = xlfile.sheet_names
+    return sheet_names
 
 def file_parser(path, pattern='*.txt'):
     """
@@ -269,8 +287,6 @@ def plot_individual_plate(data, title, out_name, time_h, save=False):
         plt.savefig(f'{out_name}.pdf', format='pdf')
 
 
-
-# make a function to plot the data as a grid of 8x12 using plotly
 def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
     """
     Plots the data as a grid of 8x12 using plotly. It takes a Pandas dataframe as input with Wells as index and time as columns.
@@ -283,6 +299,8 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
         title of the plot
     out_name : str
         name of the output file
+    time_h : numpy array
+        time in hours (e.g., [0., 0.5, 1.0, ...])
     save : bool, optional
         if True, saves the plot as a pdf file, by default False
 
@@ -310,7 +328,7 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
         step = round(max_y/3, 2)
 
     # max x axis
-    max_x = data.columns.max() / 60 / 60
+    max_x = data.columns.max() 
     step_x = round(max_x/2, 0)
 
     let_len = len(letters)
@@ -361,10 +379,10 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
     if save:
         fig.write_image(f'{out_name}.pdf')
 
+
 def plotly_wrapper(time_data, plate, data_type):
     """
     Wrapper function to plot the timeseries data using plotly
-
     Parameters
     ----------
     time_data : pandas dataframe
@@ -375,16 +393,22 @@ def plotly_wrapper(time_data, plate, data_type):
         The data type
     time_h : list
         The time in hours
-
     Returns
     -------
     None.
     """
+
     ts = time_data[(time_data.File == plate) & (time_data.Data == data_type)]
-    ts = ts.drop(columns=['File', 'Plate', 'Strain', 'Type', 'Replicate', 'Metformin_mM', 'Data'])
+    
+    # remove non-numeric columns
+    time_h = [int(i) for i in time_data.columns if is_number(i)]
+
+    ts_col = time_h.copy()
+    ts_col.insert(0, 'Well')
+
+    ts = ts[ts_col]
     ts = ts.set_index('Well')
 
-    time_h = [int(i) for i in time_data.columns if is_number(i)]
     time_h = sorted(time_h)
     time_h = np.array(time_h)/60/60
 
