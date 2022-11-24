@@ -123,14 +123,33 @@ def df_beautify(txt_object, times):
     :return: a better pandas dataframe
     """
     df = pd.DataFrame([x.split('\t') for x in txt_object])
-    df = df.dropna()
     df = df.set_index(df[0])  # set index as well name
     df = df.drop(0, axis=1)
     df.drop(df.columns[len(df.columns) - 1], axis=1, inplace=True)  # remove last column as it's a \n
+    df = df.dropna()  # remove empty rows
     df = df.replace(r'^\s*$', np.NaN, regex=True)  # replace empty values (from 0:00:00 time values) for NaN
     df.dropna(axis=1, inplace=True)  # remove empty columns
     df.columns = times  # put times as column names
     df = df.apply(pd.to_numeric)  # change type to numeric
+
+    # check if we have missing wells in the dataframe and add them if needed
+    # set of letters from A to H
+    letters = [chr(i) for i in range(65, 73)]
+    # numbers from 1 to 12
+    numbers = [str(i) for i in range(1, 13)]
+    # create a list of all the possible combinations
+    combinations = [x + y for x in letters for y in numbers]
+
+    # check if there is a missing well, and if so, add it with 0 values
+    if len(df.index) != len(combinations):
+        missing_wells = list(set(combinations) - set(df.index))
+        for well in missing_wells:
+            df.loc[well] = 0
+    else:
+        pass
+
+    # sort the dataframe by index following the order of the combinations
+    df = df.reindex(combinations)
 
     return df
 
@@ -244,47 +263,47 @@ def get_time_h(df):
     return length, time_h, time_span
 
 
-def plot_individual_plate(data, title, out_name, time_h, save=False):
-    """
-    Plots the data as a grid of 8x12. It takes a Pandas dataframe as input with Wells as index and time as columns.
+# def plot_individual_plate(data, title, out_name, time_h, save=False):
+#     """
+#     Plots the data as a grid of 8x12. It takes a Pandas dataframe as input with Wells as index and time as columns.
 
-    :param data: data to plot
-    :param title: title of the plot
-    :param out_name: name of the output file
-    :param save: if True, saves the plot as a pdf file
-    """
+#     :param data: data to plot
+#     :param title: title of the plot
+#     :param out_name: name of the output file
+#     :param save: if True, saves the plot as a pdf file
+#     """
 
-    # get index from data and separate it into numbers and letters, save only a unique list of both
-    plt.ioff()
-    mplstyle.use('fast')
-    index = data.index.to_list()
-    letters = list(set([i[0] for i in index]))
-    numbers =list(set([int(i[1:]) for i in index]))
+#     # get index from data and separate it into numbers and letters, save only a unique list of both
+#     plt.ioff()
+#     mplstyle.use('fast')
+#     index = data.index.to_list()
+#     letters = list(set([i[0] for i in index]))
+#     numbers =list(set([int(i[1:]) for i in index]))
 
-    # sort the lists
-    letters.sort()
-    numbers.sort()
+#     # sort the lists
+#     letters.sort()
+#     numbers.sort()
 
-    let_len = len(letters)
-    num_len = len(numbers)
+#     let_len = len(letters)
+#     num_len = len(numbers)
 
-    # plot data as an 8x12 grid, all plots share the same y and x axis, place a unique axis for each row and column
-    # print numbers as the general column name and letters as the general row name
-    fig, axs = plt.subplots(let_len, num_len, sharex=True, sharey=True, figsize=(num_len, let_len))
-    fig.suptitle(title)
-    for ax, col in zip(axs[0], numbers):
-        ax.set_title(col)
-    for ax, row in zip(axs[:, len(numbers)-1], letters):
-        ax.set_ylabel(row, rotation=0, size='large', labelpad=10)
-        ax.yaxis.set_label_position("right")
-    for i, ax in enumerate(axs.flat):
-        ax.plot(time_h, data.iloc[i])
-        ax.set_xticks(np.arange(0, 24, 12))
-        ax.set_yticks(np.arange(0, max(data.max(axis=1)), 0.3))
+#     # plot data as an 8x12 grid, all plots share the same y and x axis, place a unique axis for each row and column
+#     # print numbers as the general column name and letters as the general row name
+#     fig, axs = plt.subplots(let_len, num_len, sharex=True, sharey=True, figsize=(num_len, let_len))
+#     fig.suptitle(title)
+#     for ax, col in zip(axs[0], numbers):
+#         ax.set_title(col)
+#     for ax, row in zip(axs[:, len(numbers)-1], letters):
+#         ax.set_ylabel(row, rotation=0, size='large', labelpad=10)
+#         ax.yaxis.set_label_position("right")
+#     for i, ax in enumerate(axs.flat):
+#         ax.plot(time_h, data.iloc[i])
+#         ax.set_xticks(np.arange(0, 24, 12))
+#         ax.set_yticks(np.arange(0, max(data.max(axis=1)), 0.3))
     
-    if save:
-        # save the plot in pdf format
-        plt.savefig(f'{out_name}.pdf', format='pdf')
+#     if save:
+#         # save the plot in pdf format
+#         plt.savefig(f'{out_name}.pdf', format='pdf')
 
 
 def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
@@ -343,28 +362,32 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
 
     for i, row in enumerate(letters):
         for j, col in enumerate(numbers):
-            # set color to black and make plots wider
-            fig.add_trace(go.Scatter(x=time_h, 
-                                    y=data.loc[f'{row}{col}'], 
-                                    line=dict(color='black', width=1)), 
-                                    row=i+1, col=j+1)
-            # y axis update axes, range between min and max of the data
-            if j == 0:
-                fig.update_yaxes(range=[0, max_y], gridcolor='white',
-                                title_text=row, 
-                                showline=True, linewidth=1, linecolor='black',mirror=True,
-                                row=i+1, col=j+1, 
-                                tickvals=np.arange(0, max_y, step))
+            # if a combination of row and column is not in the dataframe, skip it
+            if f'{row}{col}' not in data.index:
+                continue
             else:
-                fig.update_yaxes(range=[0, max_y], gridcolor='white',
-                                showline=True, linewidth=1, linecolor='black',mirror=True,
-                                row=i+1, col=j+1, 
-                                tickvals=np.arange(0, max_y, step))
-            # x axis, rotate the tick labels by 90 degrees
-            fig.update_xaxes(range=[0, 24], row=i+1, col=j+1, gridcolor='white',
-                            showline=True, linewidth=1, linecolor='black', mirror=True,
-                            tickvals=np.arange(0, max_x+(max_x*0.1), step_x), 
-                            ticktext=np.arange(0, max_x+(max_x*0.1), step_x), tickangle=0)
+                # set color to black and make plots wider
+                fig.add_trace(go.Scatter(x=time_h, 
+                                        y=data.loc[f'{row}{col}'], 
+                                        line=dict(color='black', width=1)), 
+                                        row=i+1, col=j+1)
+                # y axis update axes, range between min and max of the data
+                if j == 0:
+                    fig.update_yaxes(range=[0, max_y], gridcolor='white',
+                                    title_text=row, 
+                                    showline=True, linewidth=1, linecolor='black',mirror=True,
+                                    row=i+1, col=j+1, 
+                                    tickvals=np.arange(0, max_y, step))
+                else:
+                    fig.update_yaxes(range=[0, max_y], gridcolor='white',
+                                    showline=True, linewidth=1, linecolor='black',mirror=True,
+                                    row=i+1, col=j+1, 
+                                    tickvals=np.arange(0, max_y, step))
+                # x axis, rotate the tick labels by 90 degrees
+                fig.update_xaxes(range=[0, 24], row=i+1, col=j+1, gridcolor='white',
+                                showline=True, linewidth=1, linecolor='black', mirror=True,
+                                tickvals=np.arange(0, max_x+(max_x*0.1), step_x), 
+                                ticktext=np.arange(0, max_x+(max_x*0.1), step_x), tickangle=0)
       
            
     # make individual subplots wider 
@@ -399,6 +422,10 @@ def plotly_wrapper(time_data, plate, data_type):
     """
 
     ts = time_data[(time_data.File == plate) & (time_data.Data == data_type)]
+
+    # check if the end of plate is = '.txt' and remove it  
+    if plate[-4:] == '.txt':
+        plate = plate[:-4] 
     
     # remove non-numeric columns
     time_h = [int(i) for i in time_data.columns if is_number(i)]

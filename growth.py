@@ -151,7 +151,8 @@ design = read_design(os.path.join(args.input, args.file))
 des_files = design['File'].to_list()
 files_in_system = file_parser(path=args.input,
                               pattern='*.txt')
-
+print(des_files)
+print(files_in_system)
 if check_if_equal(des_files, files_in_system):
     pass
 else:
@@ -229,7 +230,7 @@ plates = out_time_df.File.unique()
 out_path = os.path.join(args.input, args.output, 'Plots')
 print(out_path)
 # loop over the plates and data types, use plotly_wrapper function
-with get_context("fork").Pool(8) as p:
+with get_context("fork").Pool(n_threads) as p:
     p.starmap(plotly_wrapper, zip([out_time_df]*len(list(product(plates, data_types))), 
                                   [plate for plate in plates for i in range(len(data_types))], 
                                   [data_type for i in range(len(plates)) for data_type in data_types]))
