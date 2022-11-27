@@ -151,14 +151,13 @@ design = read_design(os.path.join(args.input, args.file))
 des_files = design['File'].to_list()
 files_in_system = file_parser(path=args.input,
                               pattern='*.txt')
-print(des_files)
-print(files_in_system)
+
 if check_if_equal(des_files, files_in_system):
     pass
 else:
     raise Exception("The files in the folder are not the same as "
                     "the files within your design file!\n"
-                    "Exiting from the run.")
+                    f"{bcolors.WARNING}Exiting from the run.{bcolors.ENDC}")
 
 # from this point, I need to open the files, calculate their stuff, plot them, and save the relevant
 # create an output folder, overwrite if it exists
@@ -187,8 +186,9 @@ else:
         print('Plots will be saved in the existing folder.')
         
 # LOOP OVER THE FILES
-print(f'{bcolors.OKCYAN}Starting the analysis of the files...{bcolors.ENDC}\n')
+print(f'{bcolors.OKCYAN}Starting the analysis of the files: {bcolors.ENDC}\n')
 # parallel loop to get the AUCs
+print(f'{bcolors.OKCYAN}Calculating the AUCs...{bcolors.ENDC}\n')
 with get_context("fork").Pool(10) as p:
     # user starmap to pass multiple arguments to the function
     out_auc_df = pd.concat(list(tqdm(p.starmap(
@@ -198,8 +198,9 @@ with get_context("fork").Pool(10) as p:
                                                ['AUC']*len(design.File.to_list()))), 
                                 total=len(design.File.to_list()))), axis=0)
 p.close()
-
+print('\n')
 # parallel loop to get the timeseries
+print(f'{bcolors.OKCYAN}Calculating the timeseries...{bcolors.ENDC}\n')
 with get_context("fork").Pool(10) as p:
     # user starmap to pass multiple arguments to the function
     out_time_df = pd.concat(list(tqdm(p.starmap(
@@ -209,11 +210,43 @@ with get_context("fork").Pool(10) as p:
                                                ['timeseries']*len(design.File.to_list()))), 
                                 total=len(design.File.to_list()))), axis=0)
 p.close()
+print('\n')
+
+# Pattern files
+if 'Pattern' in design.columns:
+    patterns = design['Pattern'].unique().tolist()
+    final_pattern_df = pd.DataFrame()
+    for pattern in patterns:
+        pattern_vars = get_sheet_names(os.path.join(ROOT, pattern))
+        pattern_df = pd.DataFrame()
+        for pat in pattern_vars:
+            pattern_media = pd.read_excel(os.path.join(ROOT, pattern), pat)
+            pattern_media = pattern_media.set_index(pattern_media.columns[0])
+            well = get_well_names(pattern_media.shape[0], pattern_media.shape[1])
+            pattern_media_vec = pattern_media.values.flatten().tolist()
+            pattern_media_df = pd.DataFrame({'Well': well, f'{pat}': pattern_media_vec, 'Pattern': pattern})
+            pattern_df = pd.concat([pattern_df, pattern_media_df], axis=1)
+
+        pattern_df = pattern_df.loc[:,~pattern_df.columns.duplicated()]
+        pattern_df = pattern_df[['Pattern', 'Well'] + [col for col in pattern_df.columns if col not in ['Pattern', 'Well']]]
+        final_pattern_df = pd.concat([final_pattern_df, pattern_df], axis=0)
+
 
 # merge the out_auc_df with the design 
-out_auc_df = design.merge(out_auc_df, on='File', how='left')
+# if 'Pattern', merge design with final_pattern_df and then merge with out_auc_df
+if 'Pattern' in design.columns:
+    design_ext = design.merge(final_pattern_df, on=['Pattern'], how='right')
+    out_auc_df = design_ext.merge(out_auc_df, on=['File', 'Well'], how='left')
+else:
+    out_auc_df = design.merge(out_auc_df, on='File', how='left') 
+# out_auc_df = design.merge(out_auc_df, on='File', how='left') # old way
 # merge the out_time_df with the design
-out_time_df = design.merge(out_time_df, on='File', how='left')
+# if 'Pattern', merge design with final_pattern_df and then merge with out_time_df
+if 'Pattern' in design.columns:
+    design_ext = design.merge(final_pattern_df, on=['Pattern'], how='right')
+    out_time_df = design_ext.merge(out_time_df, on=['File', 'Well'], how='left')
+else:
+    out_time_df = design.merge(out_time_df, on='File', how='left')
 
 # save the output file in the output folder as a csv file
 out_auc_df.to_csv(os.path.join(args.input, args.output, 'Summary.csv'), index=False)
@@ -241,3 +274,5 @@ p.close()
 # to test: python growth.py -i ./test_data/ -t 6
 
 print(f"{bcolors.BOLD}All analyses have been completed successfully!{bcolors.ENDC}")
+
+# TODO: specify the output folder for the plotly_wrapper function

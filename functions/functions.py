@@ -7,6 +7,7 @@ import matplotlib.style as mplstyle
 from matplotlib import pyplot as plt
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from itertools import product
 
 
 # functions
@@ -47,7 +48,8 @@ def get_sheet_names(file):
         A list with the names of the sheets in the Excel file.
     """
     xlfile = pd.ExcelFile(file)
-    sheet_names = xlfile.sheet_names
+    # sheet names if they don't start by '_'
+    sheet_names = [sheet for sheet in xlfile.sheet_names if sheet[0] != '_']
     return sheet_names
 
 def file_parser(path, pattern='*.txt'):
@@ -87,6 +89,27 @@ def fix_times(times):
     time_span = np.linspace(0, timemax_min * 60, length, dtype=np.dtype(int))
     return time_span
 
+def get_well_names(num_letters, num_numbers):
+    """
+    Function that returns a list of all possible combinations of letters (from A to a specified number) and numbers (from 1 to a specified number)
+    Parameters
+    ----------
+    num_letters : int
+        The number of letters to be used
+    num_numbers : int
+        The number of numbers to be used
+    Returns
+    -------
+    list
+        A list of all possible combinations of letters (from A to a specified number) and numbers (from 1 to a specified number)
+    """
+    # get the letters
+    letters = [chr(i) for i in range(65, 65+num_letters)]
+    # get the numbers
+    numbers = [str(i) for i in range(1, num_numbers+1)]
+    # get all the combinations of letters and numbers
+    well_names = [i+j for i, j in product(letters, numbers)]
+    return well_names
 
 def biospa_text_opener(file):
     """
@@ -99,8 +122,15 @@ def biospa_text_opener(file):
         contents = f.readlines()
     # save the OD
     od = contents[0].split('\n')[0]
+    
+    # get the index of the line where the times start
+    for i, line in enumerate(contents):
+        if line[:4] == 'Time':
+            time_line = i
+            break
+    
     # save the times
-    times = contents[2].split('\t')[1:-1]
+    times = contents[time_line].split('\t')[1:-1]
     times = fix_times(times)  # this fixes size and values for the times, rounding them
     # save temperatures
     temps_raw = contents[3].split('\t')[1:-1]
@@ -134,11 +164,14 @@ def df_beautify(txt_object, times):
 
     # check if we have missing wells in the dataframe and add them if needed
     # set of letters from A to H
-    letters = [chr(i) for i in range(65, 73)]
-    # numbers from 1 to 12
-    numbers = [str(i) for i in range(1, 13)]
-    # create a list of all the possible combinations
-    combinations = [x + y for x in letters for y in numbers]
+    # get the index and separate letters and numbers, save the unique instances
+    df_index = df.index
+    letters = [i[0] for i in df_index]
+    numbers = [i[1:] for i in df_index]
+    # sort the list of letters and numbers
+    letters = sorted(list(set(letters)))
+    numbers = sorted(list(set(numbers)))
+    combinations = get_well_names(len(letters), len(numbers))
 
     # check if there is a missing well, and if so, add it with 0 values
     if len(df.index) != len(combinations):
