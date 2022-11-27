@@ -274,5 +274,3 @@ p.close()
 # to test: python growth.py -i ./test_data/ -t 6
 
 print(f"{bcolors.BOLD}All analyses have been completed successfully!{bcolors.ENDC}")
-
-# TODO: specify the output folder for the plotly_wrapper function
