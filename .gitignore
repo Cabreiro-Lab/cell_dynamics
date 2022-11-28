@@ -12,3 +12,6 @@ _scratch.py
 *.pdf
 functions/__pycache__/functions.cpython-310.pyc
 old/Growth.py
+functions/__pycache__/functions.cpython-310.pyc
+./old
+./functions/__pycache__/
