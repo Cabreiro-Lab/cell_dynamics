@@ -11,7 +11,7 @@ but this implementation is entirely mine.
 
 __author__ = 'Daniel Martínez Martínez'
 __copyright__ = 'Copyright (C) 2022 Daniel Martínez Martínez'
-__license__ = 'GNU Affero General Public License Version 3'
+__license__ = 'MIT License'
 __email__ = 'dmartimarti **AT** gmail.com'
 __maintainer__ = 'Daniel Martínez Martínez'
 __status__ = 'alpha'
@@ -158,6 +158,8 @@ des_files = design['File'].to_list()
 files_in_system = file_parser(path=ROOT,
                               pattern='*.txt')
 
+print(f'Len of files in system: {len(files_in_system)}, and len of files in design: {len(des_files)}')
+
 if check_if_equal(des_files, files_in_system):
     pass
 else:
@@ -218,7 +220,7 @@ with get_context("fork").Pool(10) as p:
 p.close()
 print('\n')
 
-# Pattern files
+### Pattern files
 if 'Pattern' in design.columns:
     patterns = design['Pattern'].unique().tolist()
     final_pattern_df = pd.DataFrame()
@@ -268,15 +270,15 @@ print_out = os.path.join(OUTPUT,'Plots')
 
 print(f'\nPlotting the {bcolors.OKGREEN}timeseries{bcolors.ENDC} in {print_out}. \n')
 
-# print(out_path)
-# loop over the plates and data types, use plotly_wrapper function
-with get_context("fork").Pool(n_threads) as p:
-    p.starmap(plotly_wrapper, zip([out_time_df]*len(list(product(plates, data_types))), 
-                                  [plate for plate in plates for i in range(len(data_types))], 
-                                  [data_type for i in range(len(plates)) for data_type in data_types],
-                                  [out_path]*len(list(product(plates, data_types)))))
+plotly_inputs = zip([out_time_df]*len(list(product(plates, data_types))), 
+                    [plate for plate in plates for i in range(len(data_types))], 
+                    [data_type for i in range(len(plates)) for data_type in data_types],
+                    [out_path]*len(list(product(plates, data_types))))
 
-p.close()
+# print(out_path)
+# loop over the plates and data types using plotly_wrapper function
+with get_context("fork").Pool(n_threads) as p:
+    p.starmap(plotly_wrapper, tqdm(plotly_inputs, total=len(list(product(plates, data_types)))))
 
 
 # to test: python growth.py -i ./test_data/ -t 6

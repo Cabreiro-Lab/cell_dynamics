@@ -67,13 +67,9 @@ def file_parser(path, pattern='*.txt'):
 
 def check_if_equal(list_1, list_2):
     """
-        Check if both the lists are of same length and if yes then compare
-        sorted versions of both the list to check if both of them are equal
-        i.e. contain similar elements with same frequency.
+        Check if the elements contained in the list_1 are present in the list_2. If true, returns True. If false, returns False.
     """
-    if len(list_1) != len(list_2):
-        return False
-    return sorted(list_1) == sorted(list_2)
+    return set(list_1).issubset(set(list_2))
 
 
 def fix_times(times):

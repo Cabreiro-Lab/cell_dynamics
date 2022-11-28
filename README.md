@@ -14,11 +14,12 @@ The script is written in Python 3.10 and it is recommended to use a virtual envi
 - tqdm
 - itertools
 - matplotlib
+- seaborn
 
 I highly recommed to create a new conda environment and install the libraries with the following command:
 
 ```bash
-conda create -n <env_name> python=3.10 numpy pandas plotly tqdm matplotlib
+conda create -n <env_name> python=3.10 numpy pandas plotly tqdm matplotlib seaborn
 ```
 
 I will create a requirements.txt file in the future to make the installation easier.
