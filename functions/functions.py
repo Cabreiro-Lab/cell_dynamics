@@ -436,7 +436,7 @@ def plot_individual_plate_plotly(data, title, out_name, time_h, save=False):
         fig.write_image(f'{out_name}.pdf')
 
 
-def plotly_wrapper(time_data, plate, data_type):
+def plotly_wrapper(time_data, plate, data_type, output):
     """
     Wrapper function to plot the timeseries data using plotly
     Parameters
@@ -472,7 +472,9 @@ def plotly_wrapper(time_data, plate, data_type):
     time_h = sorted(time_h)
     time_h = np.array(time_h)/60/60
 
-    plot_individual_plate_plotly(ts, plate + data_type, f'./test_data/test_output/Plots/{plate}_{data_type}', time_h = time_h, save=True)
+    out_file = f'{output}/{plate}_{data_type}'
+
+    plot_individual_plate_plotly(ts, plate + data_type, out_file, time_h = time_h, save=True)
 
 
 # filter a list for numeric values
@@ -499,7 +501,4 @@ def is_number(s):
     
 
 
-# TODO:
-#   - introduce functions as dircheck(somedir), to check the existence of folder
-#   - start separating functions by classes (reading files, converting, analysing...)
-#   that will help to create different files and make the code go faster depending on the options
+# TODO: start separating functions by classes (reading files, converting, analysing...)

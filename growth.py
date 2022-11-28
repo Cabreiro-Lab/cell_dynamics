@@ -14,9 +14,9 @@ __copyright__ = 'Copyright (C) 2022 Daniel Martínez Martínez'
 __license__ = 'GNU Affero General Public License Version 3'
 __email__ = 'dmartimarti **AT** gmail.com'
 __maintainer__ = 'Daniel Martínez Martínez'
-__status__ = 'Test'
+__status__ = 'alpha'
 __date__ = 'Nov 2022'
-__version__ = '0.4'
+__version__ = '0.5'
 
 from functions.functions import *
 import argparse
@@ -56,6 +56,11 @@ parser.add_argument('-m',
                     '--mode',
                     default='growth',
                     help='Select between the 2 modes: biolog or growth')
+parser.add_argument('-v',
+                    '--version',
+                    action='version',
+                    version=f'%(prog)s v.{__version__} {__status__}')
+
 
 args = parser.parse_args()
 
@@ -141,15 +146,16 @@ print(f'The folder {os.path.split(args.input)[-1]} will be analysed in the mode 
 
 # initialise variables
 ROOT = args.input
+OUTPUT = args.output
 n_threads = int(args.threads)
 mode = args.mode
 
 # read Excel file with Pandas
-design = read_design(os.path.join(args.input, args.file))
+design = read_design(os.path.join(ROOT, args.file))
 
 # first, check if the files from the file and your computer are the same
 des_files = design['File'].to_list()
-files_in_system = file_parser(path=args.input,
+files_in_system = file_parser(path=ROOT,
                               pattern='*.txt')
 
 if check_if_equal(des_files, files_in_system):
@@ -161,27 +167,27 @@ else:
 
 # from this point, I need to open the files, calculate their stuff, plot them, and save the relevant
 # create an output folder, overwrite if it exists
-if not os.path.exists(os.path.join(args.input, args.output)):
-    os.makedirs(os.path.join(args.input, args.output))
+if not os.path.exists(os.path.join(ROOT, OUTPUT)):
+    os.makedirs(os.path.join(ROOT, OUTPUT))
 else:
     # give option to overwrite or not
-    overwrite = input(f'The folder {bcolors.OKBLUE}{args.output}{bcolors.ENDC} already exists. Do you want to overwrite it? (y/n): \n')
+    overwrite = input(f'The folder {bcolors.OKBLUE}{OUTPUT}{bcolors.ENDC} already exists. Do you want to overwrite it? (y/n): \n')
     if overwrite == 'y':
-        shutil.rmtree(os.path.join(args.input, args.output))
-        os.makedirs(os.path.join(args.input, args.output))
+        shutil.rmtree(os.path.join(ROOT, OUTPUT))
+        os.makedirs(os.path.join(ROOT, OUTPUT))
     else:
         print(f'{bcolors.WARNING}Exiting from the run.{bcolors.ENDC}')
         exit()
 
 # create a folder for the plots
-if not os.path.exists(os.path.join(args.input, args.output, 'Plots')):
-    os.makedirs(os.path.join(args.input, args.output, 'Plots'))
+if not os.path.exists(os.path.join(ROOT, OUTPUT, 'Plots')):
+    os.makedirs(os.path.join(ROOT, OUTPUT, 'Plots'))
 else:
     # give option to overwrite or not
-    overwrite = input(f'The folder {bcolors.OKBLUE}{args.output}/Plots{bcolors.ENDC} already exists. Do you want to overwrite it? (y/n): \n')
+    overwrite = input(f'The folder {bcolors.OKBLUE}{OUTPUT}/Plots{bcolors.ENDC} already exists. Do you want to overwrite it? (y/n): \n')
     if overwrite == 'y':
-        shutil.rmtree(os.path.join(args.input, args.output, 'Plots'))
-        os.makedirs(os.path.join(args.input, args.output, 'Plots'))
+        shutil.rmtree(os.path.join(ROOT, OUTPUT, 'Plots'))
+        os.makedirs(os.path.join(ROOT, OUTPUT, 'Plots'))
     else:
         print('Plots will be saved in the existing folder.')
         
@@ -249,24 +255,26 @@ else:
     out_time_df = design.merge(out_time_df, on='File', how='left')
 
 # save the output file in the output folder as a csv file
-out_auc_df.to_csv(os.path.join(args.input, args.output, 'Summary.csv'), index=False)
+out_auc_df.to_csv(os.path.join(ROOT, OUTPUT, 'Summary.csv'), index=False)
 # save the timeseries file in the output folder as a csv file
-out_time_df.to_csv(os.path.join(args.input, args.output, 'Timeseries.csv'), index=False)
+out_time_df.to_csv(os.path.join(ROOT, OUTPUT, 'Timeseries.csv'), index=False)
 
 
 ### PLOT THE TIMESERIES
-
-print(f'\nPlotting the {bcolors.OKGREEN}timeseries...{bcolors.ENDC}\n')
-
 data_types = out_time_df.Data.unique()
 plates = out_time_df.File.unique()
-out_path = os.path.join(args.input, args.output, 'Plots')
-print(out_path)
+out_path = os.path.join(ROOT, OUTPUT, 'Plots')
+print_out = os.path.join(OUTPUT,'Plots')
+
+print(f'\nPlotting the {bcolors.OKGREEN}timeseries{bcolors.ENDC} in {print_out}. \n')
+
+# print(out_path)
 # loop over the plates and data types, use plotly_wrapper function
 with get_context("fork").Pool(n_threads) as p:
     p.starmap(plotly_wrapper, zip([out_time_df]*len(list(product(plates, data_types))), 
                                   [plate for plate in plates for i in range(len(data_types))], 
-                                  [data_type for i in range(len(plates)) for data_type in data_types]))
+                                  [data_type for i in range(len(plates)) for data_type in data_types],
+                                  [out_path]*len(list(product(plates, data_types)))))
 
 p.close()
 
