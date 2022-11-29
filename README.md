@@ -36,7 +36,43 @@ As an extra step to save plots in Plotly, you need to install kaleido.
 conda install -c conda-forge python-kaleido
 ```
 
-I will create a requirements.txt file in the future to make the installation easier.
+*I will create a requirements.txt file in the future to make the installation easier.*
+
+After you have created a new environment and installed all the libraries, **you need to clone the repository in your local machine**.
+
+```bash
+cd <path_to_your_local_folder>
+git clone https://github.com/Cabreiro-Lab/cell_dynamics
+```
+
+The scripts are in the `scripts` folder, which contains the main script (`growth.py`), and a folder with necessary functions. Right now there's only one extra script in there, but there might be more in the future. If you want to run the script, you need to copy `growth.py` and the functions folder to the folder where you have your data. **However, if you want to run it anywhere**, keep reading.
+
+## OPTIONAL: make the script executable anywhere
+
+If you want to make this script available from anywhere, you can add the path to the script to the `PATH` variable in your `.zshrc` file. For example, if you have the github repository in the folder `~/Documents/`, you can add the following line to your `.zshrc` file:
+
+**Be aware that modifying zshrc can produce unexpected results**
+
+```bash
+echo "export PATH=$PATH:~/Documents/cell_dynamics/scripts" >> ~/.zshrc
+```
+
+Add also the functions folder:
+    
+```bash
+echo "export PATH=$PATH:~/Documents/cell_dynamics/scripts/functions" >> ~/.zshrc
+```
+
+Then go to the scripts folder and make the main script executable:
+
+```bash
+cd ~/Documents/cell_dynamics/scripts
+chmod +x growth.py
+```
+
+**If your folders are different, change them accordingly!**
+
+This should make the script available from anywhere in your computer. You might need to restart your terminal to make it work by typing `source ~/.zshrc`, or open a new terminal.
 
 ## Usage
 
@@ -48,7 +84,7 @@ python growth.py -i <input_folder> -o <output_folder> -t <threads>
 
 The script can be called with the following arguments:
 
-- `-i` or `--input`: Path to the input folder. The script will look for a file named `Design.xlsx` and read it. 
+- `-i` or `--input`: Path to the input folder **where Design.xlsx is**. The script will look for a file named `Design.xlsx` and read it. 
 - `-o` or `--output`: Path to the output folder. The script will create a folder for plots and another for the csv files.
 - `-t` or `--threads`: Number of threads to use. 
 
@@ -59,13 +95,6 @@ Any other sheet in the input file will be ignored.
 
 If you want to include information about the plate pattern, `Design.xlsx` must have a column named `Pattern`, where it indicates the name of the Pattern file or files that it will read and parse. This pattern file can have as many sheets as you want, with a shape of a 96-well plate. If you don't want a specific column to be read by the script, you can name it starting with an underscore, e.g., `_Variable`.
 
-### Usage example
-
-Having the scripts in the same folder as the input `Design.xlsx` file, the following command will run the script:
-
-```bash
-python growth.py -i ./ -o Output -t 4
-```
 
 ## Output
 
