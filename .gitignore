@@ -8,6 +8,7 @@ split_fasta.py
 test_jupyter.ipynb
 _one_plate_script.py
 _scratch.py
+dependencies.yaml
 *.pyc
 *.pdf
 functions/__pycache__/functions.cpython-310.pyc
