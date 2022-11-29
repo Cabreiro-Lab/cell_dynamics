@@ -15,11 +15,25 @@ The script is written in Python 3.10 and it is recommended to use a virtual envi
 - itertools
 - matplotlib
 - seaborn
+- scipy
+- openpyxl
 
 I highly recommed to create a new conda environment and install the libraries with the following command:
 
 ```bash
-conda create -n <env_name> python=3.10 numpy pandas plotly tqdm matplotlib seaborn
+conda create -n <env_name> python=3.10 numpy pandas plotly tqdm matplotlib seaborn scipy openpyxl
+```
+
+Activate the new environment.
+
+```bash
+conda activate <env_name>
+```
+
+As an extra step to save plots in Plotly, you need to install kaleido.
+
+```bash
+conda install -c conda-forge python-kaleido
 ```
 
 I will create a requirements.txt file in the future to make the installation easier.
@@ -38,8 +52,10 @@ The script can be called with the following arguments:
 - `-o` or `--output`: Path to the output folder. The script will create a folder for plots and another for the csv files.
 - `-t` or `--threads`: Number of threads to use. 
 
-A word about the input file: for now it needs to be named exactly as `Design.xlsx` and it needs to have the following columns:
+A word about the *input file*: for now it needs to be named exactly as `Design.xlsx`, have a sheet named `Design` and it needs to have the following columns:
 - `File`: Name of the txt files to analyse. The script will look for a file with the same name in the input folder.
+
+Any other sheet in the input file will be ignored.
 
 If you want to include information about the plate pattern, `Design.xlsx` must have a column named `Pattern`, where it indicates the name of the Pattern file or files that it will read and parse. This pattern file can have as many sheets as you want, with a shape of a 96-well plate. If you don't want a specific column to be read by the script, you can name it starting with an underscore, e.g., `_Variable`.
 
@@ -54,6 +70,13 @@ python growth.py -i ./ -o Output -t 4
 ## Output
 
 The script will create a folder named as the specified output, and within it will create a folder named `Plots`. It will save two .csv files in the output folder, one with the AUCs and another with the timeseries. Then it will save all the plots within the `Plots` folder.
+
+It will output 3 types of plots:
+- A timeseries plot with raw values that will be named just as the input file name and the wave length, e.g., *plate_1_595nm.pdf*
+- A timeseries plot a Wiener smoothing filter applied, named as the input file name and the wave length + '_f', e.g., *plate_1_595nm_f.pdf*
+- A plot of the growth rates per time, named as the input file name and the wave length + '_dt', e.g., *plate_1_595nm_dt.pdf*
+
+The same variables can be found in the AUCs and timeseries .csv files as column names. 
 
 ## License
 
