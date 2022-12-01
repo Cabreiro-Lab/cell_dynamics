@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from itertools import product
+import seaborn as sns
 
 
 # functions
@@ -494,7 +495,37 @@ def is_number(s):
         return True
     except ValueError:
         return False
-    
 
+
+def plot_boxplots(data, grouping_var, temp_var, x_var, y_var, output_dir):
+    """
+        Function to make boxplots from the dataframe
+
+        Parameters 
+        ----------
+        data : pandas dataframe
+            dataframe containing the data to be plotted
+        grouping_var : str
+            main variable by which you want to plot the data (e.g. Strains)
+        temp_var : str
+            variable to be used as a temporary variable to group the data (e.g. the specific strain)
+        x_var : str
+            variable to be used as the x-axis (e.g. the metformin concentration)
+        y_var : str
+            variable to be used as the y-axis (e.g. the AUC)
+        output_dir : str
+            directory to save the plots
+
+        Returns
+        -------
+        Saves a plot in the specified directory
+    """
+    
+    data = data[data[grouping_var] == temp_var]
+    sns.boxplot(x=x_var, y=y_var, data=data)
+    sns.swarmplot(x=x_var, y=y_var, data=data, color='black')
+    plt.title(temp_var)
+    plt.savefig(output_dir + temp_var + '.pdf')
+    plt.close()
 
 # TODO: start separating functions by classes (reading files, converting, analysing...)
