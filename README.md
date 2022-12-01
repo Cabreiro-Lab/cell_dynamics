@@ -88,6 +88,8 @@ The script can be called with the following arguments:
 - `-o` or `--output`: Path to the output folder. The script will create a folder for plots and another for the csv files.
 - `-t` or `--threads`: Number of threads to use. 
 
+### Design.xlsx
+
 A word about the *input file*: for now it needs to be named exactly as `Design.xlsx`, have a sheet named `Design` and it needs to have the following columns:
 - `File`: Name of the txt files to analyse. The script will look for a file with the same name in the input folder.
 
@@ -95,6 +97,11 @@ Any other sheet in the input file will be ignored.
 
 If you want to include information about the plate pattern, `Design.xlsx` must have a column named `Pattern`, where it indicates the name of the Pattern file or files that it will read and parse. This pattern file can have as many sheets as you want, with a shape of a 96-well plate. If you don't want a specific column to be read by the script, you can name it starting with an underscore, e.g., `_Variable`.
 
+**New function**, now is possible to include a sheet named `analysis` in the Design.xlsx file. This sheet will be used to specify **two variables**: a *grouping variable* and a *condition*. The grouping variable will be used to group the data, and the condition will be used as a x-axis variable for the boxplot. The script will look for the following columns: `grouping_variable` and `condition`. Below the column names you must specify the name of the column in the `Design` sheet that you want to use as grouping variable and condition. The variables to be used can be variables used in the Design file and/or in the Pattern files. 
+
+For example, imagine you are analysing different strains with 0 and 50 mM of metformin. You can include as a grouping variable `strain`, and as a condition `metformin`. The script will group the data by strain and plot the boxplot for each strain, with the metformin as the x-axis variable.
+
+*TODO*: add more flexibility to the grouping variable, so it can be a combination of variables.
 
 ## Output
 
