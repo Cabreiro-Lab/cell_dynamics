@@ -528,4 +528,56 @@ def plot_boxplots(data, grouping_var, temp_var, x_var, y_var, output_dir):
     plt.savefig(output_dir + temp_var + '.pdf')
     plt.close()
 
+
+def get_timeseries_yvar(data, ending):
+    """
+        Function to get the y_var from a Timeseries dataframe
+
+        Parameters
+        ----------
+        data : pandas dataframe
+            dataframe containing the data to be plotted
+        ending : str
+            ending of the variable to be used as the y-axis (e.g. 'nm_f' to get the AUC)
+
+        Returns
+        -------
+        y_var : str
+            variable to be used as the y-axis 
+    """
+    return data[data['Data'].str.endswith(ending)].Data.unique().tolist()[0] 
+
+
+def plot_simple_timeseries(data, condition, y_var, x_var='Time', title=None):
+    """
+        Function to plot a timeseries
+
+        Parameters
+        ----------
+        data : pandas dataframe
+            dataframe containing the data to be plotted
+        condition : list
+            list of variables to be used as the condition
+        y_var : str
+            variable to be used as the y-axis
+        x_var : str
+            variable to be used as the x-axis
+        title : str
+            title of the plot
+        
+        Returns
+        -------
+        None
+
+    """
+    # set the figure size
+    plt.figure(figsize=(8, 7))
+    # plot the data, use virids palette
+    sns.lineplot(data=data, x=x_var, y=y_var, hue=condition, style=condition, dashes=False, palette='viridis')
+    # set the x and y labels
+    plt.xlabel('Time (h)')
+    plt.ylabel('OD')
+    # plot title
+    plt.title(title)
+
 # TODO: start separating functions by classes (reading files, converting, analysing...)

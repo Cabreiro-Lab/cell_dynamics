@@ -74,6 +74,21 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
+class AnalysisVars():
+    def __init__(self, analysis_vars):
+        self.grouping_variable = analysis_vars.grouping_variable.dropna().to_list()[0]
+        self.condition = analysis_vars.condition.dropna().to_list()[0] 
+        self.all_vars = self.grouping_variable + [self.condition]
+    
+    # method to append any ammount of elements to the list in grouping_variable
+    def append_grouping_variable(self, *args):
+        temp_list = self.grouping_variable
+        for arg in args:
+            temp_list.append(arg)
+        return temp_list
+
+
 # initialise variables
 ROOT = args.input
 OUTPUT = args.output
@@ -281,15 +296,16 @@ def main():
     if 'analysis' in desing_sheets:
         print('\nI found the analysis sheet in the design file. I will run the extended analysis.\n')
         analysis_vars = pd.read_excel(os.path.join(ROOT, 'Design.xlsx'), 'analysis')
-
-        grp_var = analysis_vars.grouping_variable.to_list()[0]
-        condition = analysis_vars.condition.to_list()[0]
+        
+        analysis_vars = AnalysisVars(analysis_vars)
+        grp_var = analysis_vars.grouping_variable
+        condition = analysis_vars.condition
 
         # check that grp_var and condition are columns in the out_auc_df
         if grp_var in out_auc_df.columns and condition in out_auc_df.columns:
             pass
         else:
-            print(f'{bcolors.FAIL}The grouping variable and/or the condition are not in the out_auc_df. Please check the design file.{bcolors.ENDC}')
+            print(f'{bcolors.FAIL}The grouping variable and/or the condition are not in the dataset. Please check the design file.{bcolors.ENDC}')
             sys.exit()
 
         # create a folder within Plots named "Boxplots"
