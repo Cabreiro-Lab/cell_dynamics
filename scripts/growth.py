@@ -16,8 +16,8 @@ __license__ = 'MIT License'
 __email__ = 'dmartimarti **AT** gmail.com'
 __maintainer__ = 'Daniel Martínez Martínez'
 __status__ = 'alpha'
-__date__ = 'Nov 2022'
-__version__ = '0.6.0'
+__date__ = 'Nov 2024'
+__version__ = '0.7.0'
 
 from functions.functions import *
 import argparse
@@ -54,6 +54,11 @@ parser.add_argument('-t',
                     '--threads',
                     default=1,
                     help='Number of threads to use. 1 by default.')
+# add an argument to specify if you are using windows, optional
+parser.add_argument('-w',
+                    '--windows',
+                    action='store_true',
+                    help='Flag to indicate that you are using Windows.')
 parser.add_argument('-v',
                     '--version',
                     action='version',
@@ -161,6 +166,12 @@ def out_auc_function(file, mode):
 def main():
     print(f'The folder {os.path.split(args.input)[-1]} will be analysed.')
 
+    # if -w is passed, store a variable with the string "spawn"
+    if args.windows:
+        start_method = 'spawn'
+    else:
+        start_method = 'fork'
+
     # read Excel file with Pandas
     design = read_design(os.path.join(ROOT, args.file))
 
@@ -208,7 +219,7 @@ def main():
     print(f'{bcolors.OKCYAN}Starting the analysis of the files: {bcolors.ENDC}\n')
     # parallel loop to get the AUCs
     print(f'{bcolors.OKCYAN}Calculating the AUCs...{bcolors.ENDC}\n')
-    with get_context("fork").Pool(n_threads) as p:
+    with get_context(start_method).Pool(n_threads) as p:
         # user starmap to pass multiple arguments to the function
         out_auc_df = pd.concat(list(tqdm(p.starmap(
                                                 out_auc_function, 
@@ -220,7 +231,7 @@ def main():
     print('\n')
     # parallel loop to get the timeseries
     print(f'{bcolors.OKCYAN}Calculating the timeseries...{bcolors.ENDC}\n')
-    with get_context("fork").Pool(n_threads) as p:
+    with get_context(start_method).Pool(n_threads) as p:
         # user starmap to pass multiple arguments to the function
         out_time_df = pd.concat(list(tqdm(p.starmap(
                                                 out_auc_function, 
@@ -288,7 +299,7 @@ def main():
 
     # print(out_path)
     # loop over the plates and data types using plotly_wrapper function
-    with get_context("fork").Pool(n_threads) as p:
+    with get_context(start_method).Pool(n_threads) as p:
         p.starmap(plotly_wrapper, tqdm(plotly_inputs, total=len(list(product(plates, data_types)))))
 
     # EXTENDED ANALYSIS
@@ -331,7 +342,7 @@ def main():
                         [y_var]*len(temp_vars),
                         [os.path.join(ROOT, OUTPUT, 'Plots', 'Boxplots')+'/']*len(temp_vars))
 
-        with get_context("fork").Pool(n_threads) as p:
+        with get_context(start_method).Pool(n_threads) as p:
             p.starmap(plot_boxplots, tqdm(inputs, total=len(temp_vars)))
 
         

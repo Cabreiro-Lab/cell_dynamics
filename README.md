@@ -87,6 +87,9 @@ The script can be called with the following arguments:
 - `-i` or `--input`: Path to the input folder **where Design.xlsx is**. The script will look for a file named `Design.xlsx` and read it. 
 - `-o` or `--output`: Path to the output folder. The script will create a folder for plots and another for the csv files.
 - `-t` or `--threads`: Number of threads to use. 
+- `-w` or `--windows`: Specify wheter you are using Windows to use an alternative multiprocessing method.
+
+**IMPORTANT**: If you are using **Windows**, make sure you specify the `-w` argument. The script will use an alternative multiprocessing method that works in Windows.Otherwise, if you are using a Mac with **M1 chip**, you don't need to specify the `-w` argument.
 
 ### Design.xlsx
 
