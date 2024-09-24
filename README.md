@@ -21,7 +21,7 @@ The script is written in Python 3.10 and it is recommended to use a virtual envi
 I highly recommed to create a new conda environment and install the libraries with the following command:
 
 ```bash
-conda create -n <env_name> python=3.10 numpy pandas plotly tqdm matplotlib seaborn scipy openpyxl
+conda create -n <env_name> python=3.10 numpy=1.24 pandas plotly tqdm matplotlib seaborn scipy openpyxl
 ```
 
 Activate the new environment.
